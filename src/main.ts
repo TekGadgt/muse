@@ -1,4 +1,4 @@
-import { Notice, Plugin } from "obsidian";
+import { Notice, Plugin, TFile, TFolder, normalizePath } from "obsidian";
 import {
   ClaudeFocusSettings,
   ClaudeFocusSettingTab,
@@ -43,6 +43,32 @@ export default class ClaudeFocusPlugin extends Plugin {
     await this.saveData(this.settings);
   }
 
+  private async getPastPrompts(): Promise<string[]> {
+    const folderPath = normalizePath(this.settings.outputFolder);
+    const folder = this.app.vault.getAbstractFileByPath(folderPath);
+    if (!(folder instanceof TFolder)) return [];
+
+    const prompts: string[] = [];
+    for (const child of folder.children) {
+      if (!(child instanceof TFile) || child.extension !== "md") continue;
+      const content = await this.app.vault.read(child);
+      // Extract blockquoted prompt from the top of the file
+      const promptLines: string[] = [];
+      for (const line of content.split("\n")) {
+        if (line.startsWith("> ")) {
+          promptLines.push(line.substring(2));
+        } else {
+          break;
+        }
+      }
+      if (promptLines.length > 0) {
+        prompts.push(promptLines.join(" "));
+      }
+    }
+    // Return the 10 most recent to keep context manageable
+    return prompts.slice(-10);
+  }
+
   private async activateZenMode(): Promise<void> {
     if (!this.settings.apiKey) {
       // eslint-disable-next-line obsidianmd/ui/sentence-case -- "Claude" and "API" are proper nouns
@@ -61,7 +87,8 @@ export default class ClaudeFocusPlugin extends Plugin {
     }
 
     try {
-      const prompt = await fetchWritingPrompt(this.settings);
+      const pastPrompts = await this.getPastPrompts();
+      const prompt = await fetchWritingPrompt(this.settings, pastPrompts);
       const file = await createZenNote(
         this.app.vault,
         this.settings.outputFolder,

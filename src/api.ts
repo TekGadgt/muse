@@ -84,8 +84,15 @@ export async function buildSystemPrompt(
 }
 
 export async function fetchWritingPrompt(
-  settings: ClaudeFocusSettings
+  settings: ClaudeFocusSettings,
+  pastPrompts: string[]
 ): Promise<string> {
+  let userMessage = "Give me a writing prompt.";
+  if (pastPrompts.length > 0) {
+    userMessage += "\n\nDo NOT repeat or rephrase any of these previous prompts — pick a completely different project or topic:\n";
+    userMessage += pastPrompts.map((p) => `- ${p}`).join("\n");
+  }
+
   const response = await requestUrl({
     url: CLAUDE_API_URL,
     method: "POST",
@@ -98,7 +105,7 @@ export async function fetchWritingPrompt(
       model: MODEL,
       max_tokens: MAX_TOKENS,
       system: await buildSystemPrompt(settings),
-      messages: [{ role: "user", content: "Give me a writing prompt." }],
+      messages: [{ role: "user", content: userMessage }],
     }),
   });
 
