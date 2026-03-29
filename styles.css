@@ -77,13 +77,14 @@ body.claude-focus-zen-active .workspace-leaf-content {
 }
 
 .claude-focus-prompt blockquote {
-  border-left: 3px solid var(--text-faint);
-  padding-left: var(--size-4-4);
+  border-left: none;
+  padding-left: 0;
   color: var(--text-muted);
   font-size: var(--font-ui-medium);
   line-height: 1.7;
   margin: 0;
   font-style: italic;
+  text-align: center;
 }
 
 /* Writing area */
