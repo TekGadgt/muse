@@ -1,9 +1,14 @@
 import { requestUrl } from "obsidian";
-import type { MuseSettings } from "./settings";
+import type { MuseSettings, Provider } from "./settings";
 
-const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-6";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const MAX_TOKENS = 300;
+
+const DEFAULT_MODELS: Record<Provider, string> = {
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-4o",
+};
 
 interface GitHubRepo {
   name: string;
@@ -83,28 +88,24 @@ export async function buildSystemPrompt(
   return lines.join("\n");
 }
 
-export async function fetchWritingPrompt(
-  settings: MuseSettings,
-  pastPrompts: string[]
+async function callAnthropic(
+  systemPrompt: string,
+  userMessage: string,
+  model: string,
+  apiKey: string
 ): Promise<string> {
-  let userMessage = "Give me a writing prompt.";
-  if (pastPrompts.length > 0) {
-    userMessage += "\n\nDo NOT repeat or rephrase any of these previous prompts — pick a completely different project or topic:\n";
-    userMessage += pastPrompts.map((p) => `- ${p}`).join("\n");
-  }
-
   const response = await requestUrl({
-    url: CLAUDE_API_URL,
+    url: ANTHROPIC_API_URL,
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": settings.apiKey,
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model,
       max_tokens: MAX_TOKENS,
-      system: await buildSystemPrompt(settings),
+      system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
     }),
   });
@@ -121,8 +122,71 @@ export async function fetchWritingPrompt(
   };
   const textBlock = body.content?.find((block) => block.type === "text");
   if (!textBlock?.text) {
-    throw new Error("No text in Claude response.");
+    throw new Error("No text in API response.");
   }
 
   return textBlock.text;
+}
+
+async function callOpenAI(
+  systemPrompt: string,
+  userMessage: string,
+  model: string,
+  apiKey: string
+): Promise<string> {
+  const response = await requestUrl({
+    url: OPENAI_API_URL,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: MAX_TOKENS,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+    }),
+  });
+
+  if (response.status !== 200) {
+    const errorBody = response.json as { error?: { message?: string } };
+    const message =
+      errorBody?.error?.message ?? `API returned status ${response.status}`;
+    throw new Error(message);
+  }
+
+  const body = response.json as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  const text = body.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error("No text in API response.");
+  }
+
+  return text;
+}
+
+export async function fetchWritingPrompt(
+  settings: MuseSettings,
+  pastPrompts: string[]
+): Promise<string> {
+  let userMessage = "Give me a writing prompt.";
+  if (pastPrompts.length > 0) {
+    userMessage += "\n\nDo NOT repeat or rephrase any of these previous prompts — pick a completely different project or topic:\n";
+    userMessage += pastPrompts.map((p) => `- ${p}`).join("\n");
+  }
+
+  const systemPrompt = await buildSystemPrompt(settings);
+  const model = settings.modelOverride || DEFAULT_MODELS[settings.provider];
+
+  switch (settings.provider) {
+    case "openai":
+      return callOpenAI(systemPrompt, userMessage, model, settings.apiKey);
+    case "anthropic":
+    default:
+      return callAnthropic(systemPrompt, userMessage, model, settings.apiKey);
+  }
 }
