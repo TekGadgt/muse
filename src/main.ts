@@ -8,7 +8,7 @@ import { fetchWritingPrompt } from "./api";
 import { createZenNote } from "./file";
 import { ZenWriterView, ZEN_VIEW_TYPE } from "./view";
 
-export default class ClaudeFocusPlugin extends Plugin {
+export default class MusePlugin extends Plugin {
   settings: ClaudeFocusSettings = DEFAULT_SETTINGS;
 
   async onload(): Promise<void> {
@@ -19,13 +19,13 @@ export default class ClaudeFocusPlugin extends Plugin {
     });
 
     this.addCommand({
-      id: "enter-zen-mode",
-      name: "Enter zen mode",
-      callback: () => this.activateZenMode(),
+      id: "enter-muse-mode",
+      name: "Enter muse mode",
+      callback: () => this.activateMuseMode(),
     });
 
-    this.addRibbonIcon("pencil", "Enter zen mode", () => {
-      void this.activateZenMode();
+    this.addRibbonIcon("pencil", "Enter muse mode", () => {
+      void this.activateMuseMode();
     });
 
     this.addSettingTab(new ClaudeFocusSettingTab(this.app, this));
@@ -69,10 +69,10 @@ export default class ClaudeFocusPlugin extends Plugin {
     return prompts.slice(-10);
   }
 
-  private async activateZenMode(): Promise<void> {
+  private async activateMuseMode(): Promise<void> {
     if (!this.settings.apiKey) {
       // eslint-disable-next-line obsidianmd/ui/sentence-case -- "Claude" and "API" are proper nouns
-      new Notice("Please set your Claude API key in settings.");
+      new Notice("Please set your API key in settings.");
       return;
     }
 
@@ -82,7 +82,7 @@ export default class ClaudeFocusPlugin extends Plugin {
 
     const view = leaf.view;
     if (!(view instanceof ZenWriterView)) {
-      new Notice("Failed to open zen view.");
+      new Notice("Failed to open muse view.");
       return;
     }
 
