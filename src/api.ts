@@ -19,15 +19,9 @@ interface GitHubRepo {
   topics?: string[];
 }
 
-function extractGitHubUsername(url: string): string | null {
-  const match = url.match(/github\.com\/([^/]+)/);
-  return match ? match[1] : null;
-}
-
 async function fetchGitHubRepos(
-  githubUrl: string
+  username: string
 ): Promise<string> {
-  const username = extractGitHubUsername(githubUrl);
   if (!username) return "";
 
   try {
@@ -69,20 +63,24 @@ export async function buildSystemPrompt(
 
   if (settings.name) lines.push(`Name: ${settings.name}`);
   if (settings.websiteUrl) lines.push(`Website: ${settings.websiteUrl}`);
-  if (settings.githubUrl) lines.push(`GitHub: ${settings.githubUrl}`);
+  if (settings.githubUsername) lines.push(`GitHub: https://github.com/${settings.githubUsername}`);
   if (settings.bio) lines.push(`About: ${settings.bio}`);
   if (settings.topics) lines.push(`Topics: ${settings.topics}`);
   if (settings.additionalContext)
     lines.push(`Additional context: ${settings.additionalContext}`);
 
-  if (settings.githubUrl) {
-    const repoContext = await fetchGitHubRepos(settings.githubUrl);
+  if (settings.githubUsername) {
+    const repoContext = await fetchGitHubRepos(settings.githubUsername);
     if (repoContext) lines.push(repoContext);
   }
 
   lines.push("");
   lines.push(
-    "Based on their ACTUAL projects, tools, and interests listed above, suggest a specific blog post topic. Reference real project names and technologies from their GitHub repos when possible. Think \"how I built X\", \"why Y works better than Z\", \"a beginner's guide to W\", \"what I learned from doing Q\". Give the topic in 1-2 sentences. Be direct, no preamble, no questions directed at the writer. Do not invent or assume projects they haven't built."
+    "IMPORTANT: You MUST only reference projects, technologies, and tools that appear in the GitHub repositories listed above. Do NOT guess or invent projects. Do NOT assume technologies that are not explicitly listed. If no repos are listed, base your suggestion only on the topics and bio provided."
+  );
+  lines.push("");
+  lines.push(
+    "Suggest a specific blog post topic. Think \"how I built X\", \"why Y works better than Z\", \"a beginner's guide to W\", \"what I learned from doing Q\". Give the topic in 1-2 sentences. Be direct, no preamble, no questions directed at the writer."
   );
 
   return lines.join("\n");

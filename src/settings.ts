@@ -9,7 +9,7 @@ export interface MuseSettings {
   modelOverride: string;
   name: string;
   websiteUrl: string;
-  githubUrl: string;
+  githubUsername: string;
   bio: string;
   topics: string;
   additionalContext: string;
@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: MuseSettings = {
   modelOverride: "",
   name: "",
   websiteUrl: "",
-  githubUrl: "",
+  githubUsername: "",
   bio: "",
   topics: "",
   additionalContext: "",
@@ -123,13 +123,14 @@ export class MuseSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("GitHub / portfolio URL")
+      .setName("GitHub username")
+      .setDesc("Used to fetch your public repos for prompt context.")
       .addText((text) =>
         text
-          .setPlaceholder("https://github.com/username")
-          .setValue(this.plugin.settings.githubUrl)
+          .setPlaceholder("Username")
+          .setValue(this.plugin.settings.githubUsername)
           .onChange(async (value) => {
-            this.plugin.settings.githubUrl = value;
+            this.plugin.settings.githubUsername = value;
             await this.plugin.saveSettings();
           })
       );
