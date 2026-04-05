@@ -3,6 +3,11 @@ import type MusePlugin from "./main";
 
 export type Provider = "anthropic" | "openai";
 
+const PROVIDER_LABELS: Record<Provider, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+};
+
 export interface MuseSettings {
   provider: Provider;
   apiKeySecretId: string;
@@ -47,9 +52,10 @@ export class MuseSettingTab extends PluginSettingTab {
       .setName("Provider")
       .setDesc("Which AI service to use for generating prompts.")
       .addDropdown((dropdown) => {
+        for (const [value, label] of Object.entries(PROVIDER_LABELS)) {
+          dropdown.addOption(value, label);
+        }
         dropdown
-          .addOption("anthropic", "Anthropic")
-          .addOption("openai", "OpenAI")
           .setValue(this.plugin.settings.provider)
           .onChange(async (value) => {
             this.plugin.settings.provider = value as Provider;
