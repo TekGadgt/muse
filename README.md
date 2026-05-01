@@ -10,6 +10,30 @@ A distraction-free writing plugin for Obsidian that generates personalized blog 
 - **Multi-provider** — works with Anthropic (Claude) or OpenAI (GPT), your choice
 - **Works on mobile** — designed for desktop and mobile Obsidian, including Android with physical keyboards
 
+## Installation
+
+Until Muse is available in the Obsidian community marketplace, install it manually using the [GitHub CLI](https://cli.github.com/):
+
+```sh
+# Latest release
+gh release download \
+  --repo TekGadgt/muse \
+  --pattern "main.js" \
+  --pattern "manifest.json" \
+  --pattern "styles.css" \
+  --dir <vault>/.obsidian/plugins/muse/
+
+# Specific version
+gh release download 0.3.2 \
+  --repo TekGadgt/muse \
+  --pattern "main.js" \
+  --pattern "manifest.json" \
+  --pattern "styles.css" \
+  --dir <vault>/.obsidian/plugins/muse/
+```
+
+Replace `<vault>` with the path to your Obsidian vault. After downloading, enable the plugin in Settings > Community plugins.
+
 ## Setup
 
 1. Install the plugin and enable it
@@ -52,7 +76,7 @@ The plugin uses a 300 token max per prompt, so each session costs fractions of a
 ## Requirements
 
 - An API key from [Anthropic](https://console.anthropic.com/settings/keys) or [OpenAI](https://platform.openai.com/api-keys)
-- Obsidian 1.0.0+
+- Obsidian 1.11.4+ (required for secret storage)
 
 ## Acknowledgements
 
