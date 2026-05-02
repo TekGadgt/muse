@@ -1,6 +1,6 @@
 {
   "name": "obsidian-muse",
-  "version": "0.3.2",
+  "version": "1.0.0",
   "description": "Distraction-free writing with AI-generated prompts.",
   "main": "main.js",
   "scripts": {
